@@ -1,0 +1,90 @@
+name: 'Setup Shifty Healing Environment'
+description: 'Sets up Ollama with qwen2.5-coder:3b model for test healing'
+author: 'Shifty AI'
+
+inputs:
+  ollama-model:
+    description: 'LLM model to use for healing'
+    required: false
+    default: 'qwen2.5-coder:3b'
+  skip-model-pull:
+    description: 'Skip pulling model if already cached'
+    required: false
+    default: 'true'
+
+outputs:
+  ollama-endpoint:
+    description: 'Ollama API endpoint URL'
+    value: ${{ steps.setup.outputs.endpoint }}
+  model-ready:
+    description: 'Whether the model is ready to use'
+    value: ${{ steps.setup.outputs.ready }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check for cached Ollama installation
+      id: cache-ollama
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.ollama
+          /usr/local/bin/ollama
+        key: ollama-${{ runner.os }}-${{ inputs.ollama-model }}
+        restore-keys: |
+          ollama-${{ runner.os }}-
+    
+    - name: Install Ollama
+      if: steps.cache-ollama.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        echo "📦 Installing Ollama..."
+        curl -fsSL https://ollama.com/install.sh | sh
+    
+    - name: Start Ollama service
+      shell: bash
+      run: |
+        echo "🚀 Starting Ollama service..."
+        ollama serve > /tmp/ollama.log 2>&1 &
+        OLLAMA_PID=$!
+        echo "OLLAMA_PID=$OLLAMA_PID" >> $GITHUB_ENV
+        
+        # Wait for Ollama to be ready
+        for i in {1..30}; do
+          if curl -s http://localhost:11434/api/version > /dev/null 2>&1; then
+            echo "✅ Ollama is ready"
+            break
+          fi
+          echo "⏳ Waiting for Ollama to start... ($i/30)"
+          sleep 2
+        done
+    
+    - name: Check for cached model
+      id: cache-model
+      if: inputs.skip-model-pull == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.ollama/models
+        key: ollama-model-${{ inputs.ollama-model }}-${{ hashFiles('.github/actions/setup-healing-environment/action.yml') }}
+    
+    - name: Pull LLM model
+      if: steps.cache-model.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        echo "📥 Pulling ${{ inputs.ollama-model }} model..."
+        ollama pull ${{ inputs.ollama-model }}
+        echo "✅ Model ready"
+    
+    - name: Verify model availability
+      shell: bash
+      run: |
+        echo "🔍 Verifying model availability..."
+        ollama list | grep -q "${{ inputs.ollama-model }}" && echo "✅ Model verified" || exit 1
+    
+    - name: Set outputs
+      id: setup
+      shell: bash
+      run: |
+        echo "endpoint=http://localhost:11434" >> $GITHUB_OUTPUT
+        echo "ready=true" >> $GITHUB_OUTPUT
+        echo "🎉 Healing environment ready!"

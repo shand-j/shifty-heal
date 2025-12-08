@@ -1,0 +1,90 @@
+{
+  "$schema": "https://shifty.dev/schemas/healing-config.json",
+  "version": "1.0.0",
+  "minConfidence": 0.6,
+  "llm": {
+    "provider": "ollama",
+    "model": "qwen2.5-coder:3b",
+    "endpoint": "http://localhost:11434",
+    "temperature": 0.2,
+    "maxTokens": 2048
+  },
+  "healingStrategies": {
+    "selectorHealing": {
+      "enabled": true,
+      "priority": 1,
+      "fallbackStrategies": [
+        "data-testid-recovery",
+        "text-content-matching",
+        "css-hierarchy-analysis",
+        "ai-powered-analysis"
+      ]
+    },
+    "timeoutHealing": {
+      "enabled": true,
+      "priority": 2,
+      "minTimeout": 5000,
+      "maxTimeout": 30000,
+      "incrementStep": 5000
+    },
+    "waitStrategyOptimization": {
+      "enabled": true,
+      "priority": 3,
+      "replaceWaitForTimeout": true,
+      "preferWaitForSelector": true
+    },
+    "asyncHealing": {
+      "enabled": true,
+      "priority": 4,
+      "detectMissingAwait": true,
+      "detectRaceConditions": true
+    },
+    "stateIsolation": {
+      "enabled": true,
+      "priority": 5,
+      "detectStatePollution": true,
+      "suggestBeforeEachCleanup": true
+    }
+  },
+  "validation": {
+    "enabled": true,
+    "runCount": 3,
+    "successThreshold": 3,
+    "retryDelay": 2000,
+    "parallelValidation": false
+  },
+  "autoCommit": {
+    "enabled": true,
+    "requirePullRequest": true,
+    "signCommits": false,
+    "commitMessageTemplate": "fix: auto-heal {testName} via Shifty Healing Engine\n\n🤖 Strategy: {strategy}\n🎯 Confidence: {confidence}%\n\n{explanation}"
+  },
+  "telemetry": {
+    "enabled": false,
+    "anonymize": true,
+    "shareSuccessData": true,
+    "endpoint": "https://telemetry.shifty.dev/api/v1/healing-events"
+  },
+  "storage": {
+    "type": "memory",
+    "cacheDuration": 3600000,
+    "persistHealingHistory": true
+  },
+  "notifications": {
+    "github": {
+      "enabled": true,
+      "postPRComments": true,
+      "includeConfidenceScores": true,
+      "includeDiffPreview": true
+    },
+    "slack": {
+      "enabled": false,
+      "webhookUrl": ""
+    }
+  },
+  "experimentation": {
+    "enabled": false,
+    "testIsolationExperiments": false,
+    "newHealingStrategies": false
+  }
+}

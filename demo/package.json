@@ -1,0 +1,30 @@
+{
+  "name": "shifty-heal-saucedemo",
+  "version": "1.0.0",
+  "description": "Comprehensive Shifty Heal demo with SauceDemo test suite",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "test:login": "playwright test tests/login.spec.ts",
+    "test:checkout": "playwright test tests/checkout.spec.ts",
+    "test:inventory": "playwright test tests/inventory.spec.ts",
+    "test:cart": "playwright test tests/cart.spec.ts",
+    "test:flaky": "playwright test tests/flaky-tests.spec.ts"
+  },
+  "keywords": ["playwright", "shifty-heal", "demo"],
+  "author": "Shifty",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "dotenv": "^16.3.1"
+  }
+}
