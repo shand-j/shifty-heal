@@ -43,8 +43,7 @@ jobs:
         id: playwright
         working-directory: ./demo
         continue-on-error: true
-        run: |
-          npm test -- --reporter=html,json,list
+        run: npm test -- --reporter=html,json,list
         env:
           CI: true
           
@@ -66,6 +65,12 @@ jobs:
     # runs-on: [self-hosted, shifty-heal, ollama]  # Uncomment if using self-hosted runners
     runs-on: ubuntu-latest  # Standard GitHub runner with composite action
     timeout-minutes: 20
+    outputs:
+      fixes_applied: ${{ steps.heal.outputs.fixes_applied }}
+      fixed_count: ${{ steps.heal.outputs.fixed_count }}
+      avg_confidence: ${{ steps.heal.outputs.avg_confidence }}
+      fix_summary: ${{ steps.heal.outputs.fix_summary }}
+      failure_reason: ${{ steps.heal.outputs.failure_reason }}
     
     steps:
       - name: Checkout code
@@ -83,7 +88,7 @@ jobs:
         uses: ./.github/actions/setup-healing-environment
         with:
           ollama-model: 'qwen2.5-coder:3b'
-          skip-model-pull: 'true'
+          skip-model-pull: 'false'
           
       - name: Start Shifty Heal Engine
         run: |
