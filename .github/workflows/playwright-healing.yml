@@ -109,6 +109,17 @@ jobs:
           name: playwright-report
           path: ./
       
+      - name: Debug artifact contents
+        run: |
+          echo "=== Checking artifact structure ==="
+          find . -name "results.json" -type f
+          echo "=== Contents of current directory ==="
+          ls -la
+          echo "=== Contents of demo directory ==="
+          ls -la demo/ || echo "demo/ not found"
+          echo "=== Contents of demo/test-results ==="
+          ls -la demo/test-results/ || echo "demo/test-results/ not found"
+      
       - name: Install script dependencies
         run: npm install @octokit/rest axios
           
