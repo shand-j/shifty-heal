@@ -51,9 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: |
-            demo/playwright-report/
-            demo/test-results/
+          path: demo/
           retention-days: 7
           
   heal:
@@ -107,23 +105,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: playwright-report
-          path: ./
+          path: demo/
       
-      - name: Debug artifact contents
+      - name: Verify test results
         run: |
-          echo "=== Checking artifact structure ==="
-          ls -la playwright-report/
-          echo "=== Moving test results to demo directory ==="
-          if [ -d "playwright-report/test-results" ]; then
-            mv playwright-report/test-results demo/
-            echo "Moved playwright-report/test-results to demo/"
+          echo "=== Checking test results structure ==="
+          ls -la demo/test-results/ || echo "test-results not found"
+          if [ -f "demo/test-results/results.json" ]; then
+            echo "✅ Found results.json"
+            wc -l demo/test-results/results.json
+          else
+            echo "❌ results.json not found"
+            exit 1
           fi
-          if [ -d "playwright-report" ]; then
-            mv playwright-report demo/
-            echo "Moved playwright-report to demo/"
-          fi
-          echo "=== Verifying demo/test-results/results.json ==="
-          ls -la playwright-report/demo/test-results/results.json
       
       - name: Install script dependencies
         run: npm install @octokit/rest axios
