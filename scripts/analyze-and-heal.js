@@ -38,28 +38,43 @@ function parseTestResults() {
   const results = JSON.parse(fs.readFileSync(TEST_RESULTS_PATH, 'utf8'));
   const failures = [];
 
-  for (const suite of results.suites || []) {
-    for (const test of suite.specs || []) {
-      const failedResults = test.tests?.filter(t => t.status === 'failed' || t.status === 'timedOut') || [];
-      
-      for (const result of failedResults) {
-        const error = result.errors?.[0];
-        if (!error) continue;
+  // Helper to recursively process suites and nested suites
+  function processSuite(suite) {
+    // Process specs in this suite
+    for (const spec of suite.specs || []) {
+      // Each spec has a tests array with project runs
+      for (const testRun of spec.tests || []) {
+        // Check each result (including retries)
+        for (const result of testRun.results || []) {
+          if (result.status === 'failed' || result.status === 'timedOut') {
+            const error = result.errors?.[0] || result.error;
+            if (!error) continue;
 
-        failures.push({
-          testFile: suite.file,
-          testTitle: test.title,
-          errorMessage: error.message,
-          errorStack: error.stack,
-          // Extract selector from error if present
-          failedSelector: extractSelector(error.message),
-          // Detect failure type
-          failureType: detectFailureType(error.message),
-          // Include test code context
-          testCode: extractTestCode(suite.file, test.title),
-        });
+            failures.push({
+              testFile: suite.file,
+              testTitle: spec.title,
+              errorMessage: error.message,
+              errorStack: error.stack,
+              // Extract selector from error if present
+              failedSelector: extractSelector(error.message),
+              // Detect failure type
+              failureType: detectFailureType(error.message),
+              // Include test code context
+              testCode: extractTestCode(suite.file, spec.title),
+            });
+          }
+        }
       }
     }
+    
+    // Recursively process nested suites
+    for (const nestedSuite of suite.suites || []) {
+      processSuite(nestedSuite);
+    }
+  }
+
+  for (const suite of results.suites || []) {
+    processSuite(suite);
   }
 
   return failures;
