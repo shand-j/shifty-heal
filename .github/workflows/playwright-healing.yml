@@ -108,6 +108,9 @@ jobs:
         with:
           name: playwright-report
           path: demo/test-results/
+      
+      - name: Install script dependencies
+        run: npm install @octokit/rest axios
           
       - name: Analyze failures and generate fixes
         id: heal
