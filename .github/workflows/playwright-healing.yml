@@ -112,10 +112,16 @@ jobs:
       - name: Debug artifact contents
         run: |
           echo "=== Checking artifact structure ==="
-          find . -name "results.json" -type f
+          ls -la playwright-report/
           echo "=== Moving test results to demo directory ==="
-          mv test-results demo/
-          mv playwright-report demo/
+          if [ -d "playwright-report/test-results" ]; then
+            mv playwright-report/test-results demo/
+            echo "Moved playwright-report/test-results to demo/"
+          fi
+          if [ -d "playwright-report" ]; then
+            mv playwright-report demo/
+            echo "Moved playwright-report to demo/"
+          fi
           echo "=== Verifying demo/test-results/results.json ==="
           ls -la demo/test-results/results.json
       
