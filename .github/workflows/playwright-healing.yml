@@ -100,6 +100,21 @@ jobs:
             -e HEALING_TELEMETRY_ENABLED=${{ vars.HEALING_TELEMETRY_ENABLED || 'false' }} \
             --add-host=host.docker.internal:host-gateway \
             coglabs/shifty-heal:latest || echo "Healing engine not yet available"
+          
+          # Wait for container to be healthy
+          echo "Waiting for healing engine to start..."
+          sleep 5
+          
+          # Check container status
+          docker ps -a | grep shifty-heal-engine
+          
+          # Check container logs
+          echo "=== Healing Engine Logs ==="
+          docker logs shifty-heal-engine || true
+          
+          # Verify Ollama is accessible from container
+          echo "=== Testing Ollama connectivity ==="
+          docker exec shifty-heal-engine curl -f http://host.docker.internal:11434/api/tags || echo "⚠️ Ollama not accessible from container"
             
       - name: Download test results
         uses: actions/download-artifact@v4

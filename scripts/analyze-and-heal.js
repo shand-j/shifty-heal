@@ -134,9 +134,47 @@ function extractTestCode(testFile, testTitle) {
 }
 
 /**
+ * Wait for healing engine to be ready
+ */
+async function waitForHealingEngine(maxAttempts = 30, delayMs = 2000) {
+  console.log(`🔍 Waiting for healing engine at ${HEALING_ENGINE_URL}...`);
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`${HEALING_ENGINE_URL}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Healing engine is ready (attempt ${attempt}/${maxAttempts})`);
+        return true;
+      }
+    } catch (error) {
+      if (attempt < maxAttempts) {
+        console.log(`⏳ Waiting for engine... (attempt ${attempt}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  
+  console.error(`❌ Healing engine not available after ${maxAttempts} attempts`);
+  return false;
+}
+
+/**
  * Send failure context to healing engine and receive fixes
  */
 async function requestHealing(failures) {
+  // Ensure engine is ready before sending requests
+  const engineReady = await waitForHealingEngine();
+  if (!engineReady) {
+    console.error('Healing engine is not available. Skipping healing.');
+    return [];
+  }
+
+  console.log(`🤖 Requesting healing from engine...`);
+  
   const healingPromises = failures.map(async (failure) => {
     try {
       const response = await fetch(`${HEALING_ENGINE_URL}/api/healing/analyze`, {
@@ -152,14 +190,18 @@ async function requestHealing(failures) {
           testCode: failure.testCode,
           healingStrategies: ['selector-healing', 'timeout-healing', 'wait-strategy', 'async-healing'],
         }),
+        signal: AbortSignal.timeout(30000), // 30s timeout per request
       });
 
       if (!response.ok) {
-        console.error(`Healing request failed for ${failure.testTitle}: ${response.statusText}`);
+        const errorText = await response.text().catch(() => response.statusText);
+        console.error(`❌ Healing request failed for ${failure.testTitle}: ${errorText}`);
         return null;
       }
 
       const healingResult = await response.json();
+      console.log(`✅ Received healing result for ${failure.testTitle} (confidence: ${healingResult.confidence})`);
+      
       return {
         ...failure,
         healedCode: healingResult.healedCode,
@@ -168,7 +210,7 @@ async function requestHealing(failures) {
         explanation: healingResult.explanation,
       };
     } catch (error) {
-      console.error(`Error requesting healing for ${failure.testTitle}:`, error.message);
+      console.error(`❌ Error requesting healing for ${failure.testTitle}:`, error.message);
       return null;
     }
   });
