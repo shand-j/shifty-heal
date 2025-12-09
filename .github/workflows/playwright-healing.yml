@@ -123,7 +123,7 @@ jobs:
             echo "Moved playwright-report to demo/"
           fi
           echo "=== Verifying demo/test-results/results.json ==="
-          ls -la demo/test-results/results.json
+          ls -la playwright-report/demo/test-results/results.json
       
       - name: Install script dependencies
         run: npm install @octokit/rest axios
