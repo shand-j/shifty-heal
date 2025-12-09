@@ -17,6 +17,8 @@ jobs:
     name: Run Playwright Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      tests_failed: ${{ steps.playwright.outputs.tests_failed }}
     
     steps:
       - name: Checkout code
@@ -40,8 +42,7 @@ jobs:
       - name: Run Playwright tests
         id: playwright
         working-directory: ./demo
-        continue-on-error: true
-        run: npm test -- --reporter=html,json,list
+        run: npm test -- --reporter=html,json,list || echo "tests_failed=true" >> $GITHUB_OUTPUT
         env:
           CI: true
           
@@ -58,7 +59,7 @@ jobs:
   heal:
     name: Auto-Heal Failed Tests
     needs: test
-    if: failure()
+    if: always() && needs.test.outputs.tests_failed == 'true'
     # Use custom runner with pre-installed Ollama for faster CI
     # runs-on: [self-hosted, shifty-heal, ollama]  # Uncomment if using self-hosted runners
     runs-on: ubuntu-latest  # Standard GitHub runner with composite action
